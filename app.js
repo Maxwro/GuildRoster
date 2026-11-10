@@ -647,13 +647,9 @@ $("#mount-filters").addEventListener("click", (e) => {
 });
 
 // ---------- Start ----------
+// Blizzard's API rules ask sites to credit them, so this one line stays
 function renderFooter() {
-  const t = new Date(DATA.fetchedAt);
-  const time = t.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-  $("#footer").innerHTML = `
-    <div class="ornament">✦</div>
-    Real data from the Blizzard Battle.net API · Last updated ${niceDate(t)} at ${time}<br>
-    Forever Armory · Private prototype · World of Warcraft and its data © Blizzard Entertainment`;
+  $("#footer").textContent = "World of Warcraft and its data © Blizzard Entertainment";
 }
 
 renderFooter();
