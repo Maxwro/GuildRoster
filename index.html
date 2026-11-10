@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forever Armory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ===== Search ===== -->
+  <header class="header">
+    <div class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg>
+      <input id="search" type="text" placeholder="Find a guild member…" autocomplete="off">
+      <ul id="results" class="results" hidden></ul>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ================= GUILD PAGE ================= -->
+    <section id="guild-view">
+      <header id="guild-hero" class="hero"></header>
+
+      <section class="section">
+        <h2 class="section-title"><span>Classes</span></h2>
+        <div id="class-bars" class="class-list"></div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title"><span>Roster</span></h2>
+        <div class="controls">
+          <div id="class-filter" class="textlinks"></div>
+        </div>
+        <div class="table-wrap">
+          <table class="roster">
+            <!-- Click a heading to sort by it, click again to reverse -->
+            <thead id="roster-head">
+              <tr>
+                <th data-sort="name">Name</th>
+                <th data-sort="level">Level</th>
+                <th data-sort="race" class="hide-sm">Race</th>
+                <th data-sort="rank">Rank</th>
+                <th data-sort="ilvl" class="hide-sm">Item level</th>
+                <th data-sort="login" class="hide-sm">Last online</th>
+              </tr>
+            </thead>
+            <tbody id="roster-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- ================= CHARACTER PAGE ================= -->
+    <section id="char-view" hidden>
+      <a href="#" class="back" id="back-btn">‹ Back to the guild</a>
+
+      <header id="char-hero" class="hero"></header>
+
+      <!-- Filled by app.js when Blizzard has no profile for this character -->
+      <p id="no-profile" class="notice" hidden></p>
+
+      <div id="char-tabs">
+        <nav class="tabs">
+          <button class="tab active" data-tab="character">Character</button>
+          <button class="tab" data-tab="mounts">Mounts</button>
+          <button class="tab" data-tab="achievements">Achievements</button>
+        </nav>
+
+        <!-- Character tab -->
+        <section id="tab-character" class="panel active">
+          <div class="two-col">
+            <section>
+              <h2 class="section-title"><span>Equipment</span></h2>
+              <div id="gear" class="gear"></div>
+            </section>
+            <section>
+              <h2 class="section-title"><span>Attributes</span></h2>
+              <div id="stats" class="leaders"></div>
+              <h2 class="section-title spaced"><span>Professions</span></h2>
+              <div id="professions"></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- Mounts tab -->
+        <section id="tab-mounts" class="panel">
+          <h2 class="section-title"><span>Mount Collection</span></h2>
+          <div class="controls">
+            <div id="mount-summary" class="summary"></div>
+            <div class="textlinks" id="mount-filters">
+              <button class="active" data-filter="all">All</button>
+              <button data-filter="owned">Collected</button>
+              <button data-filter="missing">Missing</button>
+            </div>
+          </div>
+          <div id="mounts" class="mount-grid"></div>
+        </section>
+
+        <!-- Achievements tab -->
+        <section id="tab-achievements" class="panel">
+          <!-- Overview: all categories -->
+          <div id="ach-overview">
+            <h2 class="section-title"><span>Achievements</span></h2>
+            <div id="ach-summary" class="summary"></div>
+            <div id="ach-cats" class="ach-cats"></div>
+
+            <h2 class="section-title spaced"><span>Recently Earned</span></h2>
+            <ul id="ach-recent" class="recent"></ul>
+          </div>
+
+          <!-- One category opened: every achievement in it -->
+          <div id="ach-detail" hidden></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <!-- data.js is made by fetch-data.mjs (real data from Blizzard's API) -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

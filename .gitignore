@@ -1,0 +1,4 @@
+# Made by fetch-data.mjs. On GitHub the workflow makes these itself.
+data.js
+cache.json
+*.tmp

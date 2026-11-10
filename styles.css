@@ -1,0 +1,339 @@
+/* =========================================================
+   Forever Armory — dark fantasy
+   No boxes: sections are separated by gold ornaments and space.
+   Headings in Cinzel, text in Inter.
+   ========================================================= */
+
+:root {
+  --bg:         #0c0907;
+  --ink:        #e9dec4;   /* parchment-coloured text */
+  --muted:      #9b8c70;
+  --faint:      #6b5f4b;
+  --gold:       #d4a94e;
+  --gold-hi:    #f1d48a;
+  --gold-line:  rgba(212, 169, 78, .28);
+  --gold-dots:  rgba(212, 169, 78, .22);
+  --earned:     #9cc47a;
+
+  /* item quality colours (the in-game ones) */
+  --q-poor:      #9d9d9d;
+  --q-common:    #ffffff;
+  --q-uncommon:  #1eff00;
+  --q-rare:      #0070dd;
+  --q-epic:      #a335ee;
+  --q-legendary: #ff8000;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Textured background: fine grain (an SVG noise pattern) + a warm light from above */
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+  background-color: var(--bg);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .9 0 0 0 0 .75 .09 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 90% 55% at 50% -5%, rgba(150, 100, 40, .22), transparent 70%),
+    radial-gradient(ellipse 120% 80% at 50% 120%, rgba(0, 0, 0, .7), transparent 60%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  font-variant-numeric: lining-nums;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+h1, h2, h3 { font-family: "Cinzel", serif; font-weight: 600; }
+.muted { color: var(--muted); }
+.num { font-variant-numeric: lining-nums tabular-nums; }
+
+/* ---------- Ornaments ---------- */
+
+/* ═══ ✦ ═══  (double lines fading out on both sides of a star) */
+.ornament {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  color: var(--gold); font-size: 14px;
+}
+.ornament::before, .ornament::after {
+  content: ""; width: 150px; height: 5px;
+  background:
+    linear-gradient(90deg, transparent, var(--gold)) top / 100% 1px no-repeat,
+    linear-gradient(90deg, transparent, var(--gold)) bottom / 100% 1px no-repeat;
+}
+.ornament::after { transform: scaleX(-1); }
+
+/* ─── ✦ Roster ✦ ──────────  */
+.section-title {
+  display: flex; align-items: center; gap: 14px;
+  font-size: 15px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 18px;
+}
+.section-title::before { content: ""; width: 36px; height: 1px; background: var(--gold-line); }
+.section-title::after  { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--gold-line), transparent); }
+.section-title span::before { content: "✦  "; font-size: 11px; vertical-align: 2px; }
+.section-title span::after  { content: "  ✦"; font-size: 11px; vertical-align: 2px; }
+.section-title.spaced { margin-top: 40px; }
+
+/* ---------- Search ---------- */
+.header { display: flex; justify-content: flex-end; padding: 22px 40px 0; }
+.search {
+  position: relative; width: 320px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--gold-line);
+  padding: 4px 2px;
+}
+.search:focus-within { border-bottom-color: var(--gold); }
+.search svg { width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; flex-shrink: 0; }
+.search input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--ink); font: inherit; font-style: italic; font-size: 15px;
+}
+.search input::placeholder { color: var(--faint); }
+
+.results {
+  position: absolute; top: calc(100% + 8px); right: 0; width: 360px;
+  list-style: none; z-index: 40; max-height: 380px; overflow-y: auto;
+  background: #15100b; border: 1px solid var(--gold-line);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .7);
+}
+.results li { display: flex; align-items: center; gap: 12px; padding: 9px 14px; cursor: pointer; }
+.results li + li { border-top: 1px dotted var(--gold-dots); }
+.results li:hover { background: rgba(212, 169, 78, .07); }
+.results .rmeta { font-size: 13px; font-style: italic; color: var(--muted); }
+.results .no-match { color: var(--muted); font-style: italic; cursor: default; }
+
+/* ---------- Layout ---------- */
+.main { max-width: 1120px; margin: 0 auto; padding: 10px 40px 60px; }
+.section { margin-top: 56px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
+
+/* ---------- Heroes (guild + character) ---------- */
+.hero { text-align: center; padding: 18px 0 10px; }
+.hero h1 {
+  font-size: 56px; font-weight: 700; letter-spacing: .04em; line-height: 1.1;
+  color: var(--gold-hi); text-shadow: 0 2px 0 #000;
+  margin: 14px 0 6px;
+}
+.hero .ornament { margin: 6px 0; }
+.hero .tagline { font-style: italic; color: var(--muted); font-size: 17px; }
+.hero .facts { margin-top: 18px; font-size: 16px; }
+.hero .facts b { font-family: "Cinzel", serif; font-weight: 600; color: var(--gold-hi); }
+.hero .facts .sep { color: var(--faint); margin: 0 10px; }
+.hero .sub-facts { margin-top: 6px; color: var(--muted); font-size: 14px; }
+
+.guild-crest { width: 130px; height: auto; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .8)); }
+.guild-emblem { width: 96px; height: 96px; }
+
+/* Round class portrait with a thin gold double ring */
+.portrait {
+  display: inline-block; flex-shrink: 0;
+  width: 24px; height: 24px; border-radius: 50%; overflow: hidden;
+  box-shadow: 0 0 0 1px var(--class, var(--gold-line));
+}
+.portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.portrait.lg {
+  width: 104px; height: 104px;
+  box-shadow: 0 0 0 2px var(--gold), 0 0 0 6px var(--bg), 0 0 0 7px var(--gold-line);
+}
+.char-name .surname { color: var(--ink); font-weight: 600; }
+
+.back {
+  display: inline-block; margin-top: 4px;
+  font-family: "Cinzel", serif; font-size: 13px; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--muted);
+}
+.back:hover { color: var(--gold); }
+
+.notice {
+  max-width: 620px; margin: 36px auto 0; text-align: center;
+  font-style: italic; color: var(--muted);
+}
+.notice strong { color: var(--ink); font-style: normal; font-weight: 500; }
+
+/* ---------- Text links (filters, sorting, tabs) ---------- */
+.controls {
+  display: flex; justify-content: space-between; align-items: baseline;
+  flex-wrap: wrap; gap: 10px 30px; margin-bottom: 14px;
+}
+.textlinks { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; font-size: 14px; }
+.textlinks .label { color: var(--faint); font-style: italic; }
+.textlinks button { color: var(--muted); padding-bottom: 2px; border-bottom: 1px solid transparent; }
+.textlinks button:hover { color: var(--ink); }
+.textlinks button.active { color: var(--gold-hi); border-bottom-color: var(--gold); }
+.textlinks .count { color: var(--faint); font-size: 12px; }
+
+/* Class links: icon + name in the class colour (dimmed until hovered or chosen) */
+.textlinks button.class-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--class); opacity: .65;
+}
+.textlinks button.class-link:hover { color: var(--class); opacity: 1; }
+.textlinks button.class-link.active { color: var(--class); opacity: 1; border-bottom-color: var(--class); }
+.class-link .portrait { width: 18px; height: 18px; }
+#class-filter { align-items: center; justify-content: center; width: 100%; margin-bottom: 18px; }
+
+.tabs {
+  display: flex; justify-content: center; align-items: center; gap: 22px;
+  margin: 36px 0 34px;
+}
+.tab {
+  font-family: "Cinzel", serif; font-size: 15px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--muted); padding: 4px 2px;
+  border-bottom: 1px solid transparent;
+}
+.tab + .tab::before { content: "✦"; color: var(--faint); font-size: 10px; margin-right: 22px; vertical-align: 3px; }
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--gold-hi); }
+
+.panel { display: none; animation: fade .3s ease; }
+.panel.active { display: block; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- Thin progress lines ---------- */
+.bar { height: 3px; background: rgba(233, 222, 196, .08); overflow: hidden; }
+.bar > span { display: block; height: 100%; width: 0; background: var(--gold); transition: width .8s ease; }
+.bar.done > span { background: var(--earned); }
+
+/* ---------- Classes ---------- */
+.class-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 44px; }
+.class-row .line { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.class-row .line .n { margin-left: auto; color: var(--muted); }
+.class-row .bar > span { background: var(--class); }
+
+/* ---------- Roster ---------- */
+.table-wrap { overflow-x: auto; }
+.roster { width: 100%; border-collapse: collapse; }
+.roster th {
+  text-align: left; font-family: "Cinzel", serif; font-weight: 500;
+  font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint);
+  padding: 0 12px 10px; border-bottom: 1px solid var(--gold-line);
+}
+.roster th[data-sort] { cursor: pointer; user-select: none; white-space: nowrap; }
+.roster th[data-sort]:hover { color: var(--ink); }
+.roster th.sorted { color: var(--gold-hi); }
+.roster th[data-arrow]::after { content: attr(data-arrow); margin-left: 6px; color: var(--gold); }
+.roster td { padding: 8px 12px; border-bottom: 1px dotted var(--gold-dots); }
+.roster tbody tr { cursor: pointer; }
+.roster tbody tr:hover { background: rgba(212, 169, 78, .06); }
+.roster .who { display: flex; align-items: center; gap: 10px; }
+.roster .cname { font-weight: 600; }
+.roster .surname { color: var(--muted); font-weight: 400; }
+.rank-gm { color: var(--gold-hi); }
+
+/* ---------- Equipment ---------- */
+.gear { display: flex; flex-direction: column; gap: 12px; }
+.item { display: flex; align-items: center; gap: 14px; }
+.item-icon { width: 38px; height: 38px; flex-shrink: 0; border: 1px solid var(--q); box-shadow: 0 0 0 1px #000; }
+.item .iname { color: var(--q); font-weight: 500; line-height: 1.2; }
+.item .slot { font-size: 13px; font-style: italic; color: var(--muted); }
+.item .lvl { margin-left: auto; color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+/* "Health ........... 711" */
+.leader { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.leader .dots { flex: 1; border-bottom: 1px dotted var(--gold-dots); transform: translateY(-5px); }
+.leader .val { color: var(--gold-hi); font-family: "Cinzel", serif; font-size: 16px; }
+
+.prof { margin-bottom: 14px; }
+.prof .leader { margin-bottom: 5px; }
+
+/* ---------- Mounts ---------- */
+.summary { font-size: 16px; }
+.summary b { font-family: "Cinzel", serif; color: var(--gold-hi); font-size: 22px; font-weight: 600; }
+.summary .hint { font-size: 13px; font-style: italic; color: var(--muted); }
+
+.mount-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 30px 24px; margin-top: 10px; }
+.mount { text-align: center; }
+.mount img {
+  width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #000;
+  border: 1px solid var(--gold); box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--gold-line);
+}
+.mount .mname { font-family: "Cinzel", serif; font-size: 14px; margin-top: 12px; line-height: 1.3; }
+.mount .msource { font-size: 13px; font-style: italic; color: var(--muted); }
+.mount.missing img { filter: grayscale(1) brightness(.45); border-color: var(--faint); box-shadow: none; }
+.mount.missing .mname { color: var(--muted); }
+
+/* ---------- Achievements ---------- */
+.ach-cats { margin-top: 18px; }
+.ach-cat {
+  display: grid; grid-template-columns: 44px 1fr 140px; align-items: center; gap: 4px 18px;
+  width: 100%; text-align: left; padding: 12px 6px;
+  border-bottom: 1px dotted var(--gold-dots);
+}
+.ach-cat:hover { background: rgba(212, 169, 78, .05); }
+.ach-cat .cname { font-family: "Cinzel", serif; font-size: 17px; }
+.ach-cat .cnum { font-family: "Inter", sans-serif; color: var(--muted); font-size: 13px; font-style: italic; margin-left: 8px; }
+.ach-cat .bar { margin-top: 8px; }
+.ach-cat .cmore { text-align: right; color: var(--gold); font-style: italic; }
+
+.cicon, .ricon { width: 40px; height: 40px; border: 1px solid var(--gold-line); box-shadow: 0 0 0 1px #000; flex-shrink: 0; }
+
+.recent { list-style: none; }
+.recent li { display: flex; align-items: center; gap: 14px; padding: 9px 0; border-bottom: 1px dotted var(--gold-dots); }
+.recent .rwhen { margin-left: auto; font-style: italic; color: var(--muted); font-size: 13px; }
+
+/* Inside a category */
+.back-link {
+  font-family: "Cinzel", serif; font-size: 13px; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 22px;
+}
+.back-link:hover { color: var(--gold); }
+.detail-head { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
+.detail-head h3 { font-size: 30px; color: var(--gold-hi); }
+#ach-detail .controls { margin-top: 18px; }
+
+.ach-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 6px; border-bottom: 1px dotted var(--gold-dots);
+}
+.ach-row.clickable { cursor: pointer; }
+.ach-row.clickable:hover { background: rgba(212, 169, 78, .05); }
+.ach-row:not(.earned) .ricon { filter: grayscale(.8) brightness(.8); }
+.ach-text { flex: 1; min-width: 0; }
+.ach-name { font-family: "Cinzel", serif; font-size: 16px; }
+.ach-row.earned .ach-name { color: var(--gold-hi); }
+.ach-desc { font-size: 13px; font-style: italic; color: var(--muted); }
+.ach-right { width: 150px; text-align: right; flex-shrink: 0; }
+.ach-right .bar { margin-top: 6px; }
+.prog-num { font-family: "Cinzel", serif; font-size: 15px; }
+.earned-date { color: var(--earned); font-style: italic; font-size: 13px; }
+.chev { color: var(--gold); width: 14px; text-align: center; }
+
+/* Checklist of steps (e.g. every area to explore) */
+.crit-list {
+  list-style: none;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 24px;
+  margin: 4px 0 8px 62px; padding: 10px 0 12px 18px;
+  border-left: 1px solid var(--gold-line);
+  font-size: 14px;
+}
+.crit-list li::before { content: "·"; color: var(--gold); display: inline-block; width: 16px; font-weight: 600; }
+.crit-list li.done { color: var(--faint); text-decoration: line-through; }
+.crit-list li.done::before { content: "✓"; color: var(--earned); text-decoration: none; }
+
+.empty { color: var(--muted); font-style: italic; padding: 14px 0; }
+
+/* ---------- Footer ---------- */
+.footer {
+  text-align: center; padding: 20px 20px 40px;
+  font-size: 13px; font-style: italic; color: var(--faint); line-height: 1.7;
+}
+.footer .ornament { margin-bottom: 14px; }
+.footer .ornament::before, .footer .ornament::after { width: 80px; }
+
+/* ---------- Phone / small screens ---------- */
+@media (max-width: 860px) {
+  .header { padding: 16px 16px 0; }
+  .search { width: 100%; }
+  .results { width: 100%; }
+  .main { padding: 10px 16px 40px; }
+  .two-col { grid-template-columns: 1fr; gap: 40px; }
+  .class-list { grid-template-columns: 1fr 1fr; }
+  .hero h1 { font-size: 38px; }
+  .hero .facts .sep { margin: 0 6px; }
+  .ornament::before, .ornament::after { width: 70px; }
+  .ach-cat { grid-template-columns: 44px 1fr 90px; }
+  .ach-right { width: 90px; }
+  .crit-list { margin-left: 20px; }
+  .hide-sm { display: none; }
+}

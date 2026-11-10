@@ -1,0 +1,68 @@
+# Every 10 minutes: get fresh data from Blizzard and put the website online.
+#
+# Needs two repository Secrets: BNET_CLIENT_ID and BNET_CLIENT_SECRET
+# (Settings > Secrets and variables > Actions).
+# Needs Pages set to "GitHub Actions" (Settings > Pages > Source).
+
+name: Refresh armory
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # GitHub's timer; often runs a few minutes late
+  workflow_dispatch:          # a "Run workflow" button for running it by hand
+  push:
+    branches: [main]          # also when you upload changes
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: refresh              # never two runs at the same time
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # cache.json from the last run, so only changed characters are downloaded
+      - uses: actions/cache/restore@v4
+        with:
+          path: cache.json
+          key: armory-cache-${{ github.run_id }}
+          restore-keys: armory-cache-
+
+      - name: Get fresh data from Blizzard
+        run: node fetch-data.mjs
+        env:
+          BNET_CLIENT_ID: ${{ secrets.BNET_CLIENT_ID }}
+          BNET_CLIENT_SECRET: ${{ secrets.BNET_CLIENT_SECRET }}
+
+      - uses: actions/cache/save@v4
+        with:
+          path: cache.json
+          key: armory-cache-${{ github.run_id }}
+
+      - name: Collect the website files
+        run: |
+          mkdir _site
+          cp index.html styles.css app.js data.js _site/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
