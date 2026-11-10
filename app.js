@@ -361,9 +361,21 @@ const isEarned = (m, id) => m.achievements.done[id];
 // The achievements that matter for this character
 // (class achievements: only their own class, so a Rogue isn't "missing" Druid ones)
 function relevantIds(cat, m) {
-  const ids = cat.ids.filter((id) => ACH[id]);
-  if (cat.name === "Classes") return ids.filter((id) => ACH[id].sub === m.className);
-  return ids;
+  let ids = cat.ids.filter((id) => ACH[id]);
+  if (cat.name === "Classes") ids = ids.filter((id) => ACH[id].sub === m.className);
+  return withoutCopies(ids, m);
+}
+
+// Blizzard lists every Forever achievement twice, with two different IDs
+// (same name, same text). Show only one: the copy this character has earned,
+// otherwise the first one.
+function withoutCopies(ids, m) {
+  const kept = new Map();
+  for (const id of ids) {
+    const key = ACH[id].name + "|" + ACH[id].desc;
+    if (!kept.has(key) || (isEarned(m, id) && !isEarned(m, kept.get(key)))) kept.set(key, id);
+  }
+  return ids.filter((id) => [...kept.values()].includes(id));
 }
 
 // Every step of an achievement, with how far this character got
