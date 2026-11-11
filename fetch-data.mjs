@@ -30,6 +30,7 @@ import { fileURLToPath } from "url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MCP_CONFIG = path.join(HERE, "..", "..", ".mcp.json");
 const OUT_FILE = path.join(HERE, "data.js");
+const TALENTS_FILE = path.join(HERE, "talents.js"); // the talent trees (same for everyone, changes rarely)
 const CACHE_FILE = path.join(HERE, "cache.json");
 
 const FULL = process.argv.includes("--full");
@@ -117,12 +118,15 @@ async function imageLoads(url) {
 
 // Forever's icon if the image loads, otherwise Retail's for the same ID
 let fromRetail = 0;
-async function iconFor(kind, id) { // kind = "item" or "achievement"
+async function iconFor(kind, id) { // kind = "item", "achievement", "spell" or "playable-specialization"
   let icon = iconOf(await api(`/data/wow/media/${kind}/${id}`, "static"));
-  if (!icon || !(await imageLoads(icon))) {
-    icon = iconOf(await api(`/data/wow/media/${kind}/${id}?namespace=static-${REGION}`));
-    if (icon) fromRetail++;
-  }
+  if (icon && await imageLoads(icon)) return icon;
+  // Same picture file from Retail's image server (works when only Forever's copy is missing)
+  const sameFile = icon?.replace(`/forever-${REGION}/`, `/${REGION}/`);
+  if (sameFile && sameFile !== icon && await imageLoads(sameFile)) { fromRetail++; return sameFile; }
+  // Otherwise whatever Retail's API has for the same ID
+  icon = iconOf(await api(`/data/wow/media/${kind}/${id}?namespace=static-${REGION}`));
+  if (icon) fromRetail++;
   return icon;
 }
 
@@ -221,7 +225,50 @@ async function downloadStatic() {
   return { savedAt: Date.now(), crest, className, raceName, mounts, achTree, achievements };
 }
 
+// Every class's three talent trees, as the game lays them out:
+//   { classId: [ { id, name, icon, nodes: [ { id, name, row, col, max, icon, ranks: [text per rank],
+//                                             cast, cooldown, cost, range, needs } ] } ] }
+// "id" of a node is its talent ID — the same ID a character's picked talents use.
+async function downloadTalents() {
+  console.log("Downloading the talent trees (once a day)...");
+  const index = await api("/data/wow/talent-tree/index", "static");
+  const byClass = {};
+  await pool(index?.spec_talent_trees ?? [], 4, async (entry, order) => {
+    const tree = await api(entry.key.href);
+    if (!tree) return;
+    const talentOfNode = Object.fromEntries(tree.spec_talent_nodes.map(n => [n.id, n.ranks[0]?.tooltip?.talent?.id]));
+    const nodes = await pool(tree.spec_talent_nodes, 4, async (n) => {
+      const tip = n.ranks[0]?.tooltip?.spell_tooltip ?? {};
+      return {
+        id: talentOfNode[n.id],
+        name: n.ranks[0]?.tooltip?.talent?.name ?? "?",
+        row: n.display_row,
+        col: n.display_col,
+        max: n.ranks.length,
+        icon: tip.spell?.id ? await iconFor("spell", tip.spell.id) : null,
+        ranks: n.ranks.map(r => r.tooltip?.spell_tooltip?.description ?? ""),
+        cast: tip.cast_time ?? null,
+        cooldown: tip.cooldown ?? null,
+        cost: tip.power_cost ?? null,
+        range: tip.range ?? null,
+        needs: n.locked_by?.length ? talentOfNode[n.locked_by[0]] ?? null : null, // talent that must be maxed first
+      };
+    });
+    const specId = tree.playable_specialization.id;
+    (byClass[tree.playable_class.id] ??= []).push({
+      order,
+      id: specId,
+      name: tree.name,
+      icon: await iconFor("playable-specialization", specId),
+      nodes,
+    });
+  });
+  for (const trees of Object.values(byClass)) trees.sort((a, b) => a.order - b.order).forEach(t => delete t.order);
+  return byClass;
+}
+
 const stat = staticFresh ? cache.static : await downloadStatic();
+stat.talents ??= await downloadTalents(); // also fills it in for a cache made before talents existed
 
 // =========================================================
 // 3. Every member — only re-downloaded in full if they've logged out since last time
@@ -251,14 +298,26 @@ function achievementProgress(ach) {
   };
 }
 
-// Everything except the profile itself: gear, mounts, achievements, stats, professions
+// A character's picked talents: { specId: { points, picks: { talentId: rank } } }
+function talentPicks(specs) {
+  const group = (specs?.specialization_groups ?? []).find(g => g.is_active) ?? specs?.specialization_groups?.[0];
+  const out = {};
+  for (const sp of group?.specializations ?? []) {
+    const picks = Object.fromEntries((sp.talents ?? []).map(x => [x.talent?.id, x.talent_rank ?? 0]));
+    out[sp.specialization?.id] = { points: sp.spent_points ?? Object.values(picks).reduce((a, b) => a + b, 0), picks };
+  }
+  return out;
+}
+
+// Everything except the profile itself: gear, mounts, achievements, stats, professions, talents
 async function downloadDetails(slug) {
-  const [equip, mountCol, ach, stats, profs] = await Promise.all([
+  const [equip, mountCol, ach, stats, profs, specs] = await Promise.all([
     api(`/profile/wow/character/${slug}/equipment`),
     api(`/profile/wow/character/${slug}/collections/mounts`),
     api(`/profile/wow/character/${slug}/achievements`),
     api(`/profile/wow/character/${slug}/statistics`),
     api(`/profile/wow/character/${slug}/professions`),
+    api(`/profile/wow/character/${slug}/specializations`),
   ]);
   const prof = (p) => {
     const tier = p.tiers?.[0] ?? p;
@@ -285,6 +344,7 @@ async function downloadDetails(slug) {
       "Crit %": stats.melee_crit?.value != null ? Math.round(stats.melee_crit.value * 10) / 10 : undefined,
     } : {},
     professions: [...(profs?.primaries ?? []), ...(profs?.secondaries ?? [])].map(prof),
+    talents: talentPicks(specs),
   };
 }
 
@@ -323,7 +383,8 @@ const members = await pool(roster.members, 6, async (m) => {
   // Same last login as last time: reuse gear, mounts, stats and professions —
   // but always fetch achievements fresh, so new ones show up as fast as possible
   const old = previous[slug];
-  if (old?.hasProfile && old.lastLogin === fromProfile.lastLogin && old.equipment) {
+  // (old.talents: characters saved before the talents page existed get one full download)
+  if (old?.hasProfile && old.lastLogin === fromProfile.lastLogin && old.equipment && old.talents) {
     count.unchanged++;
     const ach = await api(`/profile/wow/character/${slug}/achievements`);
     return { ...old, ...base, ...fromProfile, ...(ach ? { achievements: achievementProgress(ach) } : {}) };
@@ -376,6 +437,9 @@ function writeSafely(file, text) {
 writeSafely(OUT_FILE,
   "// Generated by fetch-data.mjs — do not edit by hand. Data © Blizzard Entertainment.\n" +
   "window.ARMORY_DATA = " + JSON.stringify(data) + ";\n");
+writeSafely(TALENTS_FILE,
+  "// Generated by fetch-data.mjs — do not edit by hand. Data © Blizzard Entertainment.\n" +
+  "window.ARMORY_TALENTS = " + JSON.stringify(stat.talents) + ";\n");
 writeSafely(CACHE_FILE, JSON.stringify({ guild: GUILD, static: stat, members, itemIcons, noIcon: [...noIcon] }));
 
 console.log(

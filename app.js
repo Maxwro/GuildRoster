@@ -41,8 +41,9 @@ const fullName = (m) => `${m.name} ${m.surname}`;
 
 // An <img> that shows the red "?" icon if the picture is missing
 function img(src, cssClass = "", alt = "") {
+  // If a picture doesn't load: try the same file on Retail's image server, then a question mark
   return `<img class="${cssClass}" src="${src || FALLBACK_ICON}" alt="${alt}" loading="lazy"
-    onerror="this.onerror=null; this.src='${FALLBACK_ICON}'">`;
+    onerror="const r=this.src.replace('/forever-eu/','/us/').replace('/forever-us/','/us/'); if(r!==this.src){this.src=r}else{this.onerror=null;this.src='${FALLBACK_ICON}'}">`;
 }
 
 function portrait(m, size = "") {
@@ -290,6 +291,7 @@ function renderCharacter(m) {
   if (!m.hasProfile) return;
 
   renderGear(m);
+  renderTalents(m);
   renderMounts(m);
   renderAchievements(m);
   growBars();
@@ -328,6 +330,64 @@ function renderGear(m) {
           ${bar(p.skill, p.max)}
         </div>`).join("")
     : `<div class="empty">No professions learned yet.</div>`;
+}
+
+// ---------- Talents ----------
+// The trees come from talents.js (same for everyone); m.talents says what this
+// character picked: { specId: { points, picks: { talentId: rank } } }
+const TREE_ROWS = 7, TREE_COLS = 4;
+
+function renderTalents(m) {
+  const trees = (window.ARMORY_TALENTS || {})[m.classId] || [];
+  const mine = m.talents || {};
+  const pointsIn = (t) => mine[t.id]?.points || 0;
+  const total = trees.reduce((sum, t) => sum + pointsIn(t), 0);
+
+  $("#talent-summary").innerHTML = !trees.length
+    ? `<div class="hint">No talent trees are known for this class yet.</div>`
+    : `<b class="plain">${trees.map(pointsIn).join(" / ")}</b>
+       <div class="hint">${total
+          ? `${total} points spent, as of their last logout. Hover over a talent (or tap it) to read what it does.`
+          : "No talent points spent yet."}</div>`;
+
+  $("#talents").innerHTML = trees.map((t) => {
+    const picks = mine[t.id]?.picks || {};
+    // Blizzard gives each tree its own block of columns (1-4, 7-10, 14-17), so
+    // count from the tree's first column. Anything outside the 4 x 7 grid is a
+    // leftover that isn't in the game's tree, so it's only shown if it was picked.
+    const firstCol = Math.min(...t.nodes.map((n) => n.col));
+    const nodes = t.nodes
+      .map((n) => ({ ...n, col: n.col - firstCol + 1, rank: picks[n.id] || 0 }))
+      .filter((n) => n.row <= TREE_ROWS && n.col <= TREE_COLS);
+    return `
+      <div class="tree">
+        <div class="tree-head">
+          ${img(t.icon, "tree-icon")}
+          <span class="tree-name">${t.name}</span>
+          <span class="tree-points">${pointsIn(t)}</span>
+        </div>
+        <div class="tree-grid">${nodes.map(talentNode).join("")}</div>
+      </div>`;
+  }).join("");
+}
+
+function talentNode(n) {
+  const state = n.rank >= n.max ? "maxed" : n.rank > 0 ? "some" : "none";
+  // The text of the rank they have; with no points, what the first rank would do
+  const text = n.ranks[Math.max(n.rank, 1) - 1] || "";
+  const facts = [n.cost, n.range, n.cast, n.cooldown].filter(Boolean).join(" · ");
+  return `
+    <div class="talent ${state} ${n.col > TREE_COLS / 2 ? "tip-left" : ""}" tabindex="0"
+         style="grid-row:${n.row}; grid-column:${n.col}">
+      ${img(n.icon, "", n.name)}
+      <span class="trank">${n.rank}/${n.max}</span>
+      <div class="tip">
+        <div class="tip-name">${n.name}</div>
+        <div class="tip-rank">Rank ${n.rank} of ${n.max}</div>
+        ${facts ? `<div class="tip-facts">${facts}</div>` : ""}
+        <div class="tip-text">${n.rank ? "" : "<i>Not picked. First rank:</i> "}${text}</div>
+      </div>
+    </div>`;
 }
 
 // Mounts this character's faction can use (The Freeblades are Alliance)

@@ -68,6 +68,7 @@
       <div id="char-tabs">
         <nav class="tabs">
           <button class="tab active" data-tab="character">Character</button>
+          <button class="tab" data-tab="talents">Talents</button>
           <button class="tab" data-tab="mounts">Mounts</button>
           <button class="tab" data-tab="achievements">Achievements</button>
         </nav>
@@ -86,6 +87,13 @@
               <div id="professions"></div>
             </section>
           </div>
+        </section>
+
+        <!-- Talents tab: the three trees of the character's class, filled by app.js -->
+        <section id="tab-talents" class="panel">
+          <h2 class="section-title"><span>Talents</span></h2>
+          <div id="talent-summary" class="summary"></div>
+          <div id="talents" class="talent-trees"></div>
         </section>
 
         <!-- Mounts tab -->
@@ -125,6 +133,8 @@
 
   <!-- data.js is made by fetch-data.mjs (real data from Blizzard's API) -->
   <script src="data.js"></script>
+  <!-- talents.js is made by fetch-data.mjs too: every class's talent trees -->
+  <script src="talents.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

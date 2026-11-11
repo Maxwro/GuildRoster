@@ -45,6 +45,12 @@
   - A live site can't call the API from the browser (the key must stay secret), so this needs
     either a pre-fetched list of guilds or a small free "middleman" server (e.g. Cloudflare Workers)
 
+## Added 11 Nov 2026
+- [x] Updates on time: cron-job.org presses "Run workflow" every 10 minutes (GitHub's own timer was hours late)
+- [x] Mounts: how to get them (`mount-sources.json`, from Wowhead's Forever list), duplicates hidden
+- [x] Roster: place by level (ties: item level, then name), 1st/2nd/3rd in gold, silver, bronze
+- [x] Talents tab: the class's three trees with picked talents (`talents.js`, made by `fetch-data.mjs`)
+
 ## Armory improvements
 - [ ] Real guild rank names (the current ones in `RANK_NAMES` are guesses)
 - [ ] Crest: bigger, or a glow so the dark border stands out
