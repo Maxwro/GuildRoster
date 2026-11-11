@@ -237,7 +237,7 @@ function renderRoster() {
 
   $("#roster-body").innerHTML = list.map((m) => `
     <tr data-slug="${m.slug}">
-      <td class="place ${place.get(m.slug) <= 3 ? `top top-${place.get(m.slug)}` : ""}">${place.get(m.slug)}</td>
+      <td class="place ${place.get(m.slug) <= 3 ? `top top-${place.get(m.slug)}` : ""}">${["1st", "2nd", "3rd"][place.get(m.slug) - 1] || place.get(m.slug)}</td>
       <td>
         <div class="who">
           ${portrait(m)}
