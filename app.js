@@ -312,13 +312,22 @@ function renderGear(m) {
 }
 
 // Mounts this character's faction can use (The Freeblades are Alliance)
-function usableMounts() {
+// Blizzard lists a few mounts twice (same name, same picture, two IDs): only one
+// is shown — the copy this character owns, otherwise the first one.
+function usableMounts(m) {
   const faction = DATA.guild.faction;
-  return DATA.mounts.filter((x) => !x.faction || x.faction === faction);
+  const kept = new Map();
+  for (const x of DATA.mounts) {
+    if (x.faction && x.faction !== faction) continue;
+    const key = x.name + "|" + x.image;
+    const before = kept.get(key);
+    if (!before || (m.mounts.includes(x.id) && !m.mounts.includes(before.id))) kept.set(key, x);
+  }
+  return [...kept.values()];
 }
 
 function renderMounts(m) {
-  const all = usableMounts();
+  const all = usableMounts(m);
   const owned = m.mounts;
   const count = all.filter((x) => owned.includes(x.id)).length;
 
