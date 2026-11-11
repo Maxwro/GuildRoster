@@ -37,6 +37,12 @@ const GUILD = (process.argv.slice(2).find(a => !a.startsWith("--")) || "the-free
 const REGION = "eu";
 const STATIC_MAX_HOURS = 24; // how often mounts, achievements etc. are downloaded again
 
+// How to get each mount. Blizzard's API doesn't say, so this is a hand-kept file:
+// quests, vendors and drops from Wowhead's Forever mount list (Nov 2026),
+// drop chances from AtlasLoot (old Classic numbers, so only "about").
+let mountSources = {};
+try { mountSources = JSON.parse(fs.readFileSync(path.join(HERE, "mount-sources.json"), "utf8")); } catch { /* no file: no sources */ }
+
 // ---------- The cache from last time (if any) ----------
 let cache = null;
 try { cache = JSON.parse(fs.readFileSync(CACHE_FILE, "utf8")); } catch { /* first run */ }
@@ -356,7 +362,7 @@ const data = {
     crest: stat.crest,
   },
   members,
-  mounts: stat.mounts,
+  mounts: stat.mounts.map(m => ({ ...m, how: mountSources[m.id]?.how ?? null })),
   achTree: stat.achTree,
   achievements: stat.achievements,
   itemIcons,

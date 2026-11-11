@@ -338,12 +338,14 @@ function renderMounts(m) {
   $("#mounts").innerHTML = list.length
     ? list.map((x) => {
         const has = owned.includes(x.id);
-        const where = x.source !== "Unknown" ? x.source : x.faction ? `${x.faction} only` : "Both factions";
+        // "how" comes from mount-sources.json; mounts nobody has a source for get no line
+        const where = x.how ? x.how.join("<br>") : x.source !== "Unknown" ? x.source : "";
         return `
           <div class="mount ${has ? "" : "missing"}" title="${has ? "Collected" : "Not collected yet"}">
             ${img(x.image, "", x.name)}
             <div class="mname">${x.name}</div>
-            <div class="msource">${has ? where : `Not collected · ${where}`}</div>
+            ${has ? "" : `<div class="msource">Not collected</div>`}
+            ${where ? `<div class="msource">${where}</div>` : ""}
           </div>`;
       }).join("")
     : `<div class="empty">Nothing here yet.</div>`;
