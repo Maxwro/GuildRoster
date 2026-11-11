@@ -400,6 +400,8 @@ function usableMounts(m) {
   const kept = new Map();
   for (const x of DATA.mounts) {
     if (x.faction && x.faction !== faction) continue;
+    // Blizzard's own test entries, not real mounts
+    if (x.name.startsWith("[PH]") || x.name === "Translocation") continue;
     const key = x.name + "|" + x.image;
     const before = kept.get(key);
     if (!before || (m.mounts.includes(x.id) && !m.mounts.includes(before.id))) kept.set(key, x);
