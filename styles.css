@@ -217,11 +217,20 @@ h1, h2, h3 { font-family: "Cinzel", serif; font-weight: 600; }
 .roster tbody tr { cursor: pointer; }
 .roster tbody tr:hover { background: rgba(212, 169, 78, .06); }
 .roster .place { width: 1%; text-align: center; color: var(--faint); white-space: nowrap; }
-/* 1st, 2nd and 3rd: a little larger, in gold, silver and bronze */
-.roster td.top { font-size: 17px; font-weight: 600; }
-.roster td.top-1 { color: #e8c15f; }
-.roster td.top-2 { color: #c3c8d0; }
-.roster td.top-3 { color: #c98a52; }
+/* 1st, 2nd and 3rd: blocky sports-style numbers in gold, silver and bronze,
+   with small raised letters and a dark outline */
+.roster td.top { padding-top: 2px; padding-bottom: 2px; }
+.medal {
+  display: inline-flex; align-items: flex-start; font-family: "Alfa Slab One", "Inter", sans-serif; line-height: 1;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000) drop-shadow(0 1px 0 #000) drop-shadow(0 -1px 0 #000)
+          drop-shadow(0 0 1px #555);
+}
+.medal b { font-size: 27px; font-weight: 400; }
+.medal sup { font-size: 12px; margin: 1px 0 0 1px; }
+.top-1 .medal { background-image: linear-gradient(100deg, #ffd23a, #f7a800 45%, #ffd95e 55%, #e89a00); }
+.top-2 .medal { background-image: linear-gradient(100deg, #e9eef2, #a9b2ba 45%, #f4f7f9 55%, #98a1a9); }
+.top-3 .medal { background-image: linear-gradient(100deg, #d9824a, #b85a1e 45%, #e39459 55%, #a24c15); }
 .roster .who { display: flex; align-items: center; gap: 10px; }
 .roster .cname { font-weight: 600; }
 .roster .surname { color: var(--muted); font-weight: 400; }

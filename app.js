@@ -221,6 +221,12 @@ function places() {
   return new Map(order.map((m, i) => [m.slug, i + 1]));
 }
 
+// 1st, 2nd and 3rd get a big number with small raised letters; the rest a plain number
+function placeLabel(n) {
+  const letters = ["ST", "ND", "RD"][n - 1];
+  return letters ? `<span class="medal"><b>${n}</b><sup>${letters}</sup></span>` : n;
+}
+
 function renderRoster() {
   const list = members
     .filter((m) => classFilter === "All" || m.className === classFilter)
@@ -237,7 +243,7 @@ function renderRoster() {
 
   $("#roster-body").innerHTML = list.map((m) => `
     <tr data-slug="${m.slug}">
-      <td class="place ${place.get(m.slug) <= 3 ? `top top-${place.get(m.slug)}` : ""}">${["1st", "2nd", "3rd"][place.get(m.slug) - 1] || place.get(m.slug)}</td>
+      <td class="place ${place.get(m.slug) <= 3 ? `top top-${place.get(m.slug)}` : ""}">${placeLabel(place.get(m.slug))}</td>
       <td>
         <div class="who">
           ${portrait(m)}
