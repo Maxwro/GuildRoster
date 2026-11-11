@@ -57,6 +57,7 @@ jobs:
         run: |
           mkdir _site
           cp index.html styles.css app.js data.js talents.js _site/
+          cp -r talent-bg _site/
 
       - uses: actions/configure-pages@v5
 

@@ -366,7 +366,9 @@ function renderTalents(m) {
           <span class="tree-name">${t.name}</span>
           <span class="tree-points">${pointsIn(t)}</span>
         </div>
-        <div class="tree-grid">${nodes.map(talentNode).join("")}</div>
+        <!-- the tree's painted backdrop from the game: talent-bg/<tree id>.jpg -->
+        <div class="tree-grid" style="background-image:
+          linear-gradient(rgba(12, 9, 7, .35), rgba(12, 9, 7, .35)), url('talent-bg/${t.id}.jpg')">${nodes.map(talentNode).join("")}</div>
       </div>`;
   }).join("");
 }

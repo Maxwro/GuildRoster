@@ -348,6 +348,8 @@ h1, h2, h3 { font-family: "Cinzel", serif; font-weight: 600; }
 .tree-grid {
   display: grid; grid-template-columns: repeat(4, 46px); grid-template-rows: repeat(7, 46px);
   gap: 16px 18px; justify-content: center;
+  padding: 22px 10px 26px; border: 1px solid var(--gold-line); border-radius: 6px;
+  background-color: #0c0907; background-size: cover; background-position: center;
 }
 .talent { position: relative; width: 46px; height: 46px; outline: none; cursor: default; }
 .talent img { width: 100%; height: 100%; border-radius: 6px; border: 1px solid #000; display: block; }
@@ -356,7 +358,7 @@ h1, h2, h3 { font-family: "Cinzel", serif; font-weight: 600; }
   background: #0c0907; border: 1px solid var(--faint); font-size: 11px; line-height: 16px; color: var(--muted);
 }
 /* not picked: grey and dim · some points: green · all points: gold */
-.talent.none img { filter: grayscale(1) brightness(.5); }
+.talent.none img { filter: grayscale(1) brightness(.55); }
 .talent.some img { box-shadow: 0 0 0 1px var(--earned); }
 .talent.some .trank { color: var(--earned); border-color: var(--earned); }
 .talent.maxed img { box-shadow: 0 0 0 1px var(--gold), 0 0 10px rgba(212, 169, 78, .45); }
