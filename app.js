@@ -208,19 +208,25 @@ function compare(a, b) {
   if (sortBy === "rank") return a.rank - b.rank || b.level - a.level;
   if (sortBy === "ilvl") return (b.ilvl || 0) - (a.ilvl || 0);
   if (sortBy === "login") return (b.lastLogin || 0) - (a.lastLogin || 0);
-  return b.level - a.level;
+  // By level: same order as the places (level, then item level, then name)
+  return b.level - a.level || (b.ilvl || 0) - (a.ilvl || 0) || fullName(a).localeCompare(fullName(b));
 }
 
-// Place in the whole guild by level: the highest level is 1st.
-// Same level = same place, and the next place skips ahead (1, 1, 3).
-function placeOf(m) {
-  return 1 + members.filter((x) => x.level > m.level).length;
+// Place in the whole guild: the highest level is 1st. Nobody shares a place —
+// at the same level the higher item level goes first, then the name (A to Z).
+function places() {
+  const order = [...members].sort((a, b) =>
+    b.level - a.level || (b.ilvl || 0) - (a.ilvl || 0) || fullName(a).localeCompare(fullName(b)));
+  // (the same order as sorting the roster by level, see compare)
+  return new Map(order.map((m, i) => [m.slug, i + 1]));
 }
 
 function renderRoster() {
   const list = members
     .filter((m) => classFilter === "All" || m.className === classFilter)
     .sort((a, b) => (sortReversed ? -compare(a, b) : compare(a, b)));
+
+  const place = places();
 
   // Arrow on the heading we're sorting by
   document.querySelectorAll("#roster-head th").forEach((th) => {
@@ -231,7 +237,7 @@ function renderRoster() {
 
   $("#roster-body").innerHTML = list.map((m) => `
     <tr data-slug="${m.slug}">
-      <td class="place">${placeOf(m)}</td>
+      <td class="place ${place.get(m.slug) <= 3 ? `top top-${place.get(m.slug)}` : ""}">${place.get(m.slug)}</td>
       <td>
         <div class="who">
           ${portrait(m)}
