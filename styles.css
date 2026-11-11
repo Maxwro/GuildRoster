@@ -216,6 +216,7 @@ h1, h2, h3 { font-family: "Cinzel", serif; font-weight: 600; }
 .roster td { padding: 8px 12px; border-bottom: 1px dotted var(--gold-dots); }
 .roster tbody tr { cursor: pointer; }
 .roster tbody tr:hover { background: rgba(212, 169, 78, .06); }
+.roster .place { width: 1%; text-align: right; color: var(--gold); white-space: nowrap; }
 .roster .who { display: flex; align-items: center; gap: 10px; }
 .roster .cname { font-weight: 600; }
 .roster .surname { color: var(--muted); font-weight: 400; }

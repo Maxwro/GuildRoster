@@ -211,6 +211,12 @@ function compare(a, b) {
   return b.level - a.level;
 }
 
+// Place in the whole guild by level: the highest level is 1st.
+// Same level = same place, and the next place skips ahead (1, 1, 3).
+function placeOf(m) {
+  return 1 + members.filter((x) => x.level > m.level).length;
+}
+
 function renderRoster() {
   const list = members
     .filter((m) => classFilter === "All" || m.className === classFilter)
@@ -225,6 +231,7 @@ function renderRoster() {
 
   $("#roster-body").innerHTML = list.map((m) => `
     <tr data-slug="${m.slug}">
+      <td class="place">${placeOf(m)}</td>
       <td>
         <div class="who">
           ${portrait(m)}
