@@ -72,6 +72,7 @@ if (!token) throw new Error("Battle.net login failed — check the keys (GitHub 
 // ---------- Helpers ----------
 const wait = (ms) => new Promise(res => setTimeout(res, ms));
 let calls = 0;
+let lastModified = null; // when Blizzard last changed the answer to the newest call
 
 // GET with retry when Blizzard says "too many requests" (429). Returns null on 404.
 async function api(pathOrUrl, kind = "profile") {
@@ -84,6 +85,7 @@ async function api(pathOrUrl, kind = "profile") {
     if (r.status === 429) { await wait(1000 * (attempt + 1)); continue; }
     if (r.status === 404) return null;
     if (!r.ok) { console.warn(`  ! ${r.status} ${url.pathname}`); return null; }
+    lastModified = r.headers.get("last-modified");
     return r.json();
   }
   return null;
@@ -136,7 +138,9 @@ async function iconFor(kind, id) { // kind = "item", "achievement", "spell" or "
 const guild = await api(`/data/wow/guild/${GUILD}`);
 if (!guild) throw new Error(`Guild '${GUILD}' not found on ${REGION}`);
 const roster = await api(`/data/wow/guild/${GUILD}/roster`);
-console.log(`${guild.name}: ${roster.members.length} members`);
+// Blizzard only rebuilds the guild list now and then — show how old this one is
+const rosterAge = lastModified ? Math.round((Date.now() - new Date(lastModified)) / 60000) : null;
+console.log(`${guild.name}: ${roster.members.length} members (guild list is ${rosterAge ?? "?"} minutes old)`);
 
 // =========================================================
 // 2. Things that almost never change — from the cache, or downloaded once a day
@@ -374,6 +378,8 @@ const members = await pool(roster.members, 6, async (m) => {
 
   const fromProfile = {
     hasProfile: true,
+    // the guild list can be hours behind: use the higher of the two levels
+    level: Math.max(c.level, profile.level ?? 0),
     race: profile.race?.name ?? base.race,
     gender: profile.gender?.name ?? "",
     ilvl: profile.equipped_item_level ?? profile.average_item_level ?? 0,
