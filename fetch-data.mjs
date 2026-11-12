@@ -139,6 +139,7 @@ const guild = await api(`/data/wow/guild/${GUILD}`);
 if (!guild) throw new Error(`Guild '${GUILD}' not found on ${REGION}`);
 const roster = await api(`/data/wow/guild/${GUILD}/roster`);
 // Blizzard only rebuilds the guild list now and then — show how old this one is
+const rosterChanged = lastModified ? new Date(lastModified).toISOString() : null;
 const rosterAge = lastModified ? Math.round((Date.now() - new Date(lastModified)) / 60000) : null;
 console.log(`${guild.name}: ${roster.members.length} members (guild list is ${rosterAge ?? "?"} minutes old)`);
 
@@ -418,6 +419,7 @@ await pool(newItemIds, 8, async (id) => {
 // =========================================================
 const data = {
   fetchedAt: new Date().toISOString(),
+  rosterChanged, // when Blizzard last rebuilt the guild list (levels of people who are online)
   region: REGION,
   guild: {
     name: guild.name,
