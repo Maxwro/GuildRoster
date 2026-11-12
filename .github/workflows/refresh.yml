@@ -43,7 +43,8 @@ jobs:
           restore-keys: armory-cache-
 
       - name: Get fresh data from Blizzard
-        run: node fetch-data.mjs
+        # if Blizzard does not answer, wait a little and try one more time
+        run: node fetch-data.mjs || (sleep 30 && node fetch-data.mjs)
         env:
           BNET_CLIENT_ID: ${{ secrets.BNET_CLIENT_ID }}
           BNET_CLIENT_SECRET: ${{ secrets.BNET_CLIENT_SECRET }}
@@ -65,5 +66,16 @@ jobs:
         with:
           path: _site
 
+      # GitHub sometimes cannot find the files it was just given.
+      # If that happens: wait a little and try one more time.
       - id: deploy
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Wait before trying again
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 30
+
+      - name: Put the website online (second try)
+        if: steps.deploy.outcome == 'failure'
         uses: actions/deploy-pages@v4
