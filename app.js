@@ -228,6 +228,31 @@ function placeLabel(n) {
   return letters ? `<span class="medal"><b>${n}</b><sup>${letters}</sup></span>` : n;
 }
 
+// "16 Nov, 01:37" — short enough for a phone
+function shortTime(timestamp) {
+  const t = new Date(timestamp);
+  return `${t.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}, ${t.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+// Roster column "Last updated": when Blizzard last updated this character.
+// With a profile that is their last logout. Without one, only the level is
+// known, and it comes from Blizzard's guild list.
+function rosterStamp(m) {
+  if (m.hasProfile && m.lastLogin) {
+    return `<span title="Updated at their last logout">${shortTime(m.lastLogin)}</span><small>${timeAgo(m.lastLogin)}</small>`;
+  }
+  const why = m.level < 10 ? "Under level 10" : "Hidden";
+  const when = DATA.rosterChanged ? shortTime(DATA.rosterChanged) : "—";
+  return `<span class="muted" title="${noProfileReason(m)} Level from Blizzard's guild list.">${when}</span><small>${why} · level only</small>`;
+}
+
+// The same stamp as one small line, shown under the name on phones
+function phoneStamp(m) {
+  if (m.hasProfile && m.lastLogin) return `Updated ${shortTime(m.lastLogin)}`;
+  const why = m.level < 10 ? "Under level 10" : "Hidden";
+  return DATA.rosterChanged ? `${why}<br>Level: ${shortTime(DATA.rosterChanged)}` : why;
+}
+
 function renderRoster() {
   const list = members
     .filter((m) => classFilter === "All" || m.className === classFilter)
@@ -248,7 +273,8 @@ function renderRoster() {
       <td>
         <div class="who">
           ${portrait(m)}
-          <span class="cname" style="color:${colorOf(m)}">${m.name} <span class="surname">${m.surname}</span></span>
+          <span class="cname" style="color:${colorOf(m)}">${m.name} <span class="surname">${m.surname}</span>
+            <span class="stamp-sm">${phoneStamp(m)}</span></span>
         </div>
       </td>
       <td class="num">${m.level}</td>
@@ -259,7 +285,7 @@ function renderRoster() {
         : m.ilvl
           ? m.ilvl
           : `<span class="muted" title="No gear on at their last logout">No gear</span>`}</td>
-      <td class="hide-sm">${m.hasProfile ? lastOnline(m.lastLogin) : `<span class="muted" title="${noProfileReason(m)}">${m.level < 10 ? "Under level 10" : "Hidden"}</span>`}</td>
+      <td class="stamp hide-sm">${rosterStamp(m)}</td>
     </tr>`).join("");
 }
 

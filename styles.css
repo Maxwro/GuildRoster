@@ -209,6 +209,9 @@ h1, h2, h3 { font-family: "Cinzel", serif; font-weight: 600; }
   font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint);
   padding: 0 12px 10px; border-bottom: 1px solid var(--gold-line);
 }
+.roster td.stamp { white-space: nowrap; font-size: 14px; }
+.roster td.stamp small { display: block; color: var(--faint); font-size: 12px; }
+.roster .stamp-sm { display: none; color: var(--faint); font-size: 11px; font-weight: 400; }
 .roster th[data-sort] { cursor: pointer; user-select: none; white-space: nowrap; }
 .roster th[data-sort]:hover { color: var(--ink); }
 .roster th.sorted { color: var(--gold-hi); }
@@ -393,4 +396,11 @@ h1, h2, h3 { font-family: "Cinzel", serif; font-weight: 600; }
   .ach-right { width: 90px; }
   .crit-list { margin-left: 20px; }
   .hide-sm { display: none; }
+  /* roster on a phone: no room for a Last updated column, so the stamp
+     goes on a small line under the name instead */
+  .roster .stamp-sm { display: block; white-space: nowrap; }
+  .roster td, .roster th { padding-left: 4px; padding-right: 4px; }
+  .roster th { letter-spacing: 0; }
+  .roster .who { gap: 7px; }
+  .roster .surname { display: block; }
 }
