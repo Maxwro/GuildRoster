@@ -266,6 +266,14 @@ function renderRoster() {
 // =========================================================
 // CHARACTER PAGE
 // =========================================================
+// When Blizzard last updated this character.
+// With a profile: at their last logout. Without one we only have the guild list.
+function updateStamp(m) {
+  if (m.hasProfile && m.lastLogin) return `Updated ${exactTime(m.lastLogin)} — at their last logout`;
+  if (DATA.rosterChanged) return `Level updated ${exactTime(DATA.rosterChanged)} — from Blizzard's guild list`;
+  return "";
+}
+
 function renderCharacter(m) {
   // Headline
   const sep = `<span class="sep">·</span>`;
@@ -277,7 +285,8 @@ function renderCharacter(m) {
     <div class="facts">
       ${rankName(m.rank)} of <b>${DATA.guild.name}</b> ${sep} ${DATA.guild.ruleset}
       ${m.hasProfile ? `${sep} item level <b>${m.ilvl || "—"}</b> ${sep} last online <span title="${exactTime(m.lastLogin)}">${timeAgo(m.lastLogin).toLowerCase()}</span>` : ""}
-    </div>`;
+    </div>
+    <div class="sub-facts stamp">${updateStamp(m)}</div>`;
 
   // No profile from Blizzard: explain why, depending on the level
   $("#no-profile").hidden = m.hasProfile;
