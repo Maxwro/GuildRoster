@@ -59,14 +59,23 @@ function readKeys() {
 }
 const keys = readKeys();
 
-const token = (await fetch(`https://${REGION}.battle.net/oauth/token`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/x-www-form-urlencoded",
-    Authorization: "Basic " + Buffer.from(`${keys.BNET_CLIENT_ID}:${keys.BNET_CLIENT_SECRET}`).toString("base64"),
-  },
-  body: "grant_type=client_credentials",
-}).then(r => r.json())).access_token;
+// Log in to Battle.net. Blizzard sometimes hiccups, so try a few times.
+let token = null;
+for (let attempt = 0; attempt < 5 && !token; attempt++) {
+  if (attempt) await new Promise(res => setTimeout(res, 5000 * attempt));
+  try {
+    const r = await fetch(`https://${REGION}.battle.net/oauth/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: "Basic " + Buffer.from(`${keys.BNET_CLIENT_ID}:${keys.BNET_CLIENT_SECRET}`).toString("base64"),
+      },
+      body: "grant_type=client_credentials",
+    });
+    token = (await r.json()).access_token ?? null;
+    if (!token) console.warn(`  ! Battle.net login answered ${r.status}`);
+  } catch (e) { console.warn(`  ! Battle.net login: ${e.message}`); }
+}
 if (!token) throw new Error("Battle.net login failed — check the keys (GitHub Secrets or .mcp.json)");
 
 // ---------- Helpers ----------
@@ -74,20 +83,30 @@ const wait = (ms) => new Promise(res => setTimeout(res, ms));
 let calls = 0;
 let lastModified = null; // when Blizzard last changed the answer to the newest call
 
-// GET with retry when Blizzard says "too many requests" (429). Returns null on 404.
-async function api(pathOrUrl, kind = "profile") {
+// GET with retry when Blizzard says "too many requests" (429), has a server
+// error (500 and up) or the connection drops. Returns null on 404.
+// strict: if Blizzard keeps failing, throw instead of returning null — so the
+// caller can tell "does not exist" from "Blizzard is having a bad moment".
+async function api(pathOrUrl, kind = "profile", strict = false) {
   const url = new URL(pathOrUrl.startsWith("http") ? pathOrUrl : `https://${REGION}.api.blizzard.com${pathOrUrl}`);
   if (!url.searchParams.has("namespace")) url.searchParams.set("namespace", `${kind}-forever-${REGION}`);
   url.searchParams.set("locale", "en_GB");
-  for (let attempt = 0; attempt < 8; attempt++) {
+  let problem = "too many requests";
+  for (let attempt = 0; attempt < 6; attempt++) {
     calls++;
-    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    let r;
+    try { r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } }); }
+    catch (e) { problem = e.message; await wait(2000 * (attempt + 1)); continue; }
     if (r.status === 429) { await wait(1000 * (attempt + 1)); continue; }
+    if (r.status >= 500) { problem = r.status; await wait(2000 * (attempt + 1)); continue; }
     if (r.status === 404) return null;
     if (!r.ok) { console.warn(`  ! ${r.status} ${url.pathname}`); return null; }
     lastModified = r.headers.get("last-modified");
-    return r.json();
+    try { return await r.json(); }
+    catch (e) { problem = "broken answer"; await wait(2000 * (attempt + 1)); }
   }
+  console.warn(`  ! gave up (${problem}) ${url.pathname}`);
+  if (strict) throw new Error(`Blizzard keeps failing (${problem}) for ${url.pathname}`);
   return null;
 }
 
@@ -135,9 +154,9 @@ async function iconFor(kind, id) { // kind = "item", "achievement", "spell" or "
 // =========================================================
 // 1. Guild + roster (every time — this is how we see who logged out)
 // =========================================================
-const guild = await api(`/data/wow/guild/${GUILD}`);
+const guild = await api(`/data/wow/guild/${GUILD}`, "profile", true);
 if (!guild) throw new Error(`Guild '${GUILD}' not found on ${REGION}`);
-const roster = await api(`/data/wow/guild/${GUILD}/roster`);
+const roster = await api(`/data/wow/guild/${GUILD}/roster`, "profile", true);
 // Blizzard only rebuilds the guild list now and then — show how old this one is
 const rosterChanged = lastModified ? new Date(lastModified).toISOString() : null;
 const rosterAge = lastModified ? Math.round((Date.now() - new Date(lastModified)) / 60000) : null;
@@ -354,7 +373,7 @@ async function downloadDetails(slug) {
 }
 
 const previous = Object.fromEntries((FULL ? [] : cache?.members ?? []).map(m => [m.slug, m]));
-const count = { updated: 0, unchanged: 0, under10: 0, hidden: 0 };
+const count = { updated: 0, unchanged: 0, under10: 0, hidden: 0, failed: 0 };
 
 const members = await pool(roster.members, 6, async (m) => {
   const c = m.character;
@@ -374,7 +393,10 @@ const members = await pool(roster.members, 6, async (m) => {
   // Blizzard has no profiles under level 10 — don't even ask
   if (c.level < 10) { count.under10++; return base; }
 
-  const profile = await api(`/profile/wow/character/${slug}`);
+  // If Blizzard fails for this character right now, keep what we had last time
+  let profile;
+  try { profile = await api(`/profile/wow/character/${slug}`, "profile", true); }
+  catch { count.failed++; return previous[slug] ? { ...previous[slug], ...base, hasProfile: previous[slug].hasProfile, level: Math.max(c.level, previous[slug].level ?? 0) } : base; }
   if (!profile) { count.hidden++; return base; }
 
   const fromProfile = {
@@ -452,5 +474,5 @@ writeSafely(CACHE_FILE, JSON.stringify({ guild: GUILD, static: stat, members, it
 
 console.log(
   `Done: ${members.length} members — ${count.updated} updated, ${count.unchanged} unchanged, ` +
-  `${count.under10} under level 10, ${count.hidden} hidden. ${calls} API calls.`
+  `${count.under10} under level 10, ${count.hidden} hidden, ${count.failed} kept from last time (Blizzard error). ${calls} API calls.`
 );
