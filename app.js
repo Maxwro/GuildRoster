@@ -209,15 +209,49 @@ function compare(a, b) {
   if (sortBy === "rank") return a.rank - b.rank || b.level - a.level;
   if (sortBy === "ilvl") return (b.ilvl || 0) - (a.ilvl || 0);
   if (sortBy === "login") return (b.lastLogin || 0) - (a.lastLogin || 0);
-  // By level: same order as the places (level, then item level, then name)
-  return b.level - a.level || (b.ilvl || 0) - (a.ilvl || 0) || fullName(a).localeCompare(fullName(b));
+  // By level: same order as the places
+  return byLevel(a, b);
+}
+
+// When this member reached their current level (a timestamp), or null if we don't know.
+// 1. Blizzard's level achievements ("Reach level 60 for the first time on a Hunter"),
+//    which exist for 25, 45 and 60. Blizzard lists each one twice: take the earliest.
+// 2. Otherwise the time fetch-data.mjs first saw the new level (m.levelAt).
+function reachedLevelAt(m) {
+  const ids = levelAchievements().get(`${m.level} ${m.className}`) ?? [];
+  const times = ids.map((id) => m.achievements?.done?.[id]).filter(Boolean);
+  return times.length ? Math.min(...times) : (m.levelAt ?? null);
+}
+
+// "60 Hunter" -> the ids of the level achievements for it (made once, then reused)
+let levelAchCache = null, levelAchFor = null;
+function levelAchievements() {
+  if (levelAchFor === ACH) return levelAchCache;
+  levelAchCache = new Map();
+  for (const [id, a] of Object.entries(ACH)) {
+    const hit = /^Reach level (\d+) for the first time on a (\w+)\.$/.exec(a.desc ?? "");
+    if (!hit) continue;
+    const key = `${hit[1]} ${hit[2]}`;
+    levelAchCache.set(key, [...(levelAchCache.get(key) ?? []), id]);
+  }
+  levelAchFor = ACH;
+  return levelAchCache;
+}
+
+// Order by level: highest first. At the same level, whoever got there first.
+// "Don't know when" goes after a known time; then item level, then the name (A to Z).
+function byLevel(a, b) {
+  if (a.level !== b.level) return b.level - a.level;
+  const ta = reachedLevelAt(a) ?? Infinity;
+  const tb = reachedLevelAt(b) ?? Infinity;
+  if (ta !== tb) return ta - tb;
+  return (b.ilvl || 0) - (a.ilvl || 0) || fullName(a).localeCompare(fullName(b));
 }
 
 // Place in the whole guild: the highest level is 1st. Nobody shares a place —
-// at the same level the higher item level goes first, then the name (A to Z).
+// see byLevel for who goes first at the same level.
 function places() {
-  const order = [...members].sort((a, b) =>
-    b.level - a.level || (b.ilvl || 0) - (a.ilvl || 0) || fullName(a).localeCompare(fullName(b)));
+  const order = [...members].sort(byLevel);
   // (the same order as sorting the roster by level, see compare)
   return new Map(order.map((m, i) => [m.slug, i + 1]));
 }

@@ -423,6 +423,17 @@ const members = await pool(roster.members, 6, async (m) => {
   return { ...base, ...fromProfile, ...(await downloadDetails(slug)) };
 });
 
+// When did each member reach their current level? Blizzard doesn't say (only
+// for 25, 45 and 60, through achievements — app.js uses those). So we note the
+// first time WE see the new level. Before this was added nothing was noted:
+// those stay null ("don't know").
+for (const m of members) {
+  const old = previous[m.slug];
+  m.levelAt = !old ? null                         // new in the guild: don't know
+    : old.level === m.level ? (old.levelAt ?? null) // same level as last time: keep
+    : Date.now();                                  // levelled up since last time
+}
+
 // =========================================================
 // 4. Icons for gear — only for items we haven't looked up before
 // =========================================================
