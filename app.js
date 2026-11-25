@@ -379,7 +379,7 @@ function renderGear(m) {
             <div class="slot">${g.slot}</div>
             <div class="iname">${g.name}</div>
           </div>
-          <span class="lvl">ilvl ${g.ilvl}</span>
+          ${g.ilvl ? `<span class="lvl">ilvl ${g.ilvl}</span>` : ""}
         </div>`).join("")
     : "");
 
